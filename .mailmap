@@ -1,0 +1,6 @@
+# 提交身份归一化。格式：规范名 <规范邮箱> <提交里出现的名> <提交里出现的邮箱>
+# 见 https://git-scm.com/docs/gitmailmap
+#
+# 本仓库历史用 likewei@minimaxi.com 提交，GitHub 会把它算到另一个账号上。
+# 统一映射到仓库主人的 noreply 邮箱，贡献者列表才会指向 jzlikewei。
+jzlikewei <jzlikewei@users.noreply.github.com> libai <likewei@minimaxi.com>
