@@ -1,98 +1,132 @@
-# 本机大盘
+# 本机大盘 · Local Market Board
 
-> 把 macOS 与 Windows 的系统指标搬进 A 股行情终端的界面语言。
-> CPU、GPU、内存、磁盘、网络、进程——每一项系统指标都是一只「个股」，
-> 实时 K 线、主力动向、逐笔成交、自选行情一应俱全。
+A system monitor that renders your machine in the visual language of a Chinese A-share
+trading terminal. CPU, GPU, temperature, memory, disk, network and every running process
+become listed stocks, each with live candlesticks, moving averages, an index strip, a
+watchlist, a leaderboard and a trade tape.
 
-## 平台支持
+[简体中文](README.zh-CN.md)
 
-| 平台 | 采集方式 | 指标数 | 验证状态 |
+## Platform support
+
+| Platform | Collection | Fixed metrics | Status |
 | --- | --- | --- | --- |
-| macOS | `vm_stat` / `ioreg` / `netstat` / `ps` | 41 | 真机实测 |
-| Windows | 常驻 PowerShell + 性能计数器 | 41 | 见下方说明 |
+| macOS | `vm_stat` / `ioreg` / `netstat` / `ps` | 34 + per-core CPU | Verified on real hardware |
+| Windows | Long-lived PowerShell + performance counters | 34 + per-core CPU | See the note below |
 
-**Windows 验证范围**：进程采集链路在 macOS 上用 PowerShell 7.6.9 实跑验证过，
-走的是 .NET 跨平台实现；内存、GPU、磁盘、网络这几项依赖 Windows 专有的
-`PerformanceCounter` 与 `Get-CimInstance`，用真实输出格式的样本做了端到端测试，
-尚未在 Windows 真机上跑过。
+**Windows verification scope.** The process-collection path was executed on macOS under
+PowerShell 7.6.9 through the cross-platform .NET implementation. Memory, GPU, disk,
+network and thermal readings depend on Windows-only `PerformanceCounter`,
+`Get-CimInstance` and `nvidia-smi`; they were tested end to end against samples in the
+real output format and have yet to run on a physical Windows machine.
 
-## 安装
+GPU temperature, GPU power draw and the ACPI thermal-zone temperature are Windows-only.
+On macOS the three codes in the 温度 board stay empty.
 
-需要 minimax Code 桌面端。
+## Install
 
-1. 把本目录整个复制到 `~/.minimax/plugins/kurumi-monitor/`（包含隐藏的 `.minimax-plugin/`）。
-2. 重启 minimax Code，确认插件已识别并启用。
-3. 在对话里说「打开本机大盘」，或从插件列表里启动。
+Requires the MiniMax Code desktop app, 3.1.2 or later, because the package declares
+`surface.window`.
 
-## 界面
+1. Copy this whole directory to `~/.minimax/plugins/kurumi-monitor/`, including the
+   hidden `.minimax-plugin/` directory.
+2. Restart MiniMax Code and confirm the plugin is recognised and enabled.
+3. Say `打开本机大盘` in a conversation, or start it from the plugin list.
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│ 品牌 · 实时采样 · 采样周期 · 暂停 · 配色 · 主题 · 设置 · 时钟          │
-├──────────────────────────────────────────────────────────────────────┤
-│ 指数条（8 格，含迷你 K 线）                                           │
-├───────────────┬──────────────────────────────┬───────────────────────┤
-│ 我的自选       │ 品种头（今开/最高/最低/均价） │ 主力动向（Top 10）    │
-│ 大盘行情       │ K 线周期切换                 │ 名次徽标              │
-│ 按板块分组     │ 主图：K 线 + MA5/10/20       ├───────────────────────┤
-│ 41 项 + 逐核   │ 副图：内存构成三色堆叠        │ 逐笔成交（事件流水）  │
-├───────────────┴──────────────────────────────┴───────────────────────┤
-│ 个股列表 · 进程（可搜索、可加自选、可清仓，每行一条迷你 K 线）        │
-├──────────────────────────────────────────────────────────────────────┤
-│ 采样/进程/历史/占用/用户 + 跑马灯快讯                                 │
-└──────────────────────────────────────────────────────────────────────┘
-```
+The window opens at 1480x940 and asks for at least 1280x720. Below that width the page
+shows a hint to pop the panel out into its own window.
 
-红涨绿跌遵循 A 股习惯，标题栏可切换为国际配色。涨跌始终带 `+` / `−` 符号，
-不依赖颜色传达方向。
+## Using it
 
-## 用法
+- **Click a code in 大盘行情** to switch the main chart. Candles aggregate at
+  2s / 5s / 10s / 30s / 1min.
+- **Click a row in the process table** to chart that process; its CPU share is the price.
+- **Click ☆** to add a process to 我的自选. Its history keeps accumulating and survives
+  a restart.
+- **The search box** filters by process name or PID.
+- **一键清仓** terminates the selected process after a confirmation dialog.
 
-- **点大盘行情里的品种**切换主图，K 线按 2 秒 / 5 秒 / 10 秒 / 30 秒 / 1 分聚合。
-- **点进程表里的行**把主图切到那个进程，它的 CPU 占用就是这只「个股」的行情。
-- **点 ☆ 加自选**，进程走势会被持续记录，重启后历史仍然在。
-- **搜索框**按进程名或 PID 过滤。
-- **一键清仓**终止选中进程，操作前有二次确认。
+Red means up and green means down, following the A-share convention; the title bar
+switches to international colours. Every change carries an explicit `+` or `−` sign, so
+direction never depends on colour alone.
 
-## 数据访问范围
+## Data & access
 
-这个 Mini App 以你的身份在本机运行，请先确认以下行为：
+This Mini App runs locally under your own account. It declares no `agentAccess`,
+`toolAccess` or `deviceAccess`, and requests no browser permission.
 
-- **读取全机进程列表**：PID、进程名、属主、CPU 占用、常驻内存、线程数、启动时刻。
-- **读取系统指标**：CPU（含逐核）、GPU 占用与显存、内存分段、磁盘读写、网络流量。
-- **可以终止进程**：「一键清仓」向选中进程发送 `SIGTERM`，勾选强制清仓则发送 `SIGKILL`。
-  按钮只对当前用户有权发信号的进程可用，本程序自身与宿主进程永远在保护名单里。
-- **落盘位置**：采样与事件写入系统临时目录（macOS 为 `$TMPDIR/kurumi-monitor/`，
-  Windows 为 `%TEMP%\kurumi-monitor/`），由系统自行清理；偏好设置写入
-  `~/.minimax/v2/plugin-data/liveboards/kurumi-monitor/settings.json`。
-- **不联网**：所有采集与渲染都在本机完成，没有任何外部请求。
+**Processes it spawns**
 
-## 致谢
+| Platform | Command | Purpose |
+| --- | --- | --- |
+| macOS | `vm_stat`, `ioreg`, `netstat`, `ps`, `sysctl` | memory pages, GPU counters, sockets, process table, core count |
+| Windows | one long-lived `powershell.exe` running the bundled `collector.ps1` | performance counters, CIM classes, process table |
+| Windows | `nvidia-smi` when present | GPU utilisation, VRAM, temperature, power draw |
 
-界面语言与交互规格的灵感来自 [PerfTicker](https://github.com/QiuSui1145/PerfTicker)，
-作者 **QiuSui**（QiuSui_Studio），一个把 Windows 任务管理器做成炒股软件行情终端的
-C# 单文件程序，采用 GPL-3.0 协议。
+Every child is spawned with `execFile` and an argument array. On Windows the collector
+is started once and reused; its output is newline-delimited JSON.
 
-本项目是独立实现：技术栈为 JavaScript / Node，运行在 minimax Code 的 Mini App 宿主里，
-两边没有共享任何源码。沿用 GPL-3.0 是出于对原作者的尊重。
+**Files it reads**
 
-本项目补上了 PerfTicker 未覆盖的 macOS 采集链路，并在 Windows 侧用常驻 PowerShell
-重做了同一套指标。
+- The process table and system counters listed above, through the commands above.
+- `settings.json` in its own state directory, to restore the selected code, watchlist,
+  period, theme and colour scheme.
 
-## 测试环境
+**Files it writes**
 
-| 项目 | 版本 |
+- Samples and events under the system temporary directory:
+  `$TMPDIR/kurumi-monitor/` on macOS, `%TEMP%\kurumi-monitor\` on Windows. Ticks are
+  sharded into `ticks/YYYYMMDD-HH.jsonl`; events append to `events.jsonl`. The operating
+  system reclaims these on its own schedule, and everything in them is derived data that
+  the app rebuilds by sampling again.
+- `settings.json` in its own state directory, holding the selected code, watchlist,
+  candle period, theme and colour scheme.
+
+Measured on the machine in **Tested environment**: about 88 KB per minute of samples, so
+roughly 253 MB across 48 hours of continuous running.
+
+**Processes it can terminate.** 一键清仓 sends `SIGTERM` to the selected process, or
+`SIGKILL` when 强制清仓 is ticked. The button is enabled only for processes the current
+user can signal, checked with `process.kill(pid, 0)`. The app's own process and the host
+process are permanently protected.
+
+**Network.** No outbound request of any kind. No remote fonts, no CDN, no telemetry. All
+collection and rendering happen on the machine.
+
+**Agent turns, conversations, tools, microphone.** None. The app never calls
+`window.mcode.agent`, never reads a conversation, never invokes a tool and never opens
+the microphone.
+
+## Tested environment
+
+| Item | Version |
 | --- | --- |
-| minimax Code | 3.1.10-preview.5019 |
-| macOS | 26.5.2（Darwin 25.5.0，arm64） |
+| MiniMax Code | 3.1.10-preview.5019 |
+| macOS | 26.5.2 (Darwin 25.5.0, arm64) |
 | Node.js | 22.22.2 |
-| PowerShell | 7.6.9（Windows 分支验证用） |
+| PowerShell | 7.6.9, used to exercise the Windows branch |
 
-## 源码
+Verified on macOS: all 44 codes render with live values, the six macOS probes complete a
+round in 44–58 ms, a watchlist of 20 entries survives a restart of the runtime, and the
+console reports no error. The Windows branch was exercised with a stub `powershell.exe`
+feeding recorded frames, covering 29 assertions across memory, GPU, disk, network,
+process and thermal parsing.
+
+## Credits
+
+The interface language and interaction spec were inspired by
+[PerfTicker](https://github.com/QiuSui1145/PerfTicker) by **QiuSui** (QiuSui_Studio), a
+single-file C# program that turns the Windows Task Manager into a stock terminal, released
+under GPL-3.0.
+
+This project is an independent implementation in JavaScript and Node, running inside the
+MiniMax Code Mini App host. The two projects share no source code. GPL-3.0 is kept as a
+tribute to the original author.
+
+## Source
 
 https://github.com/jzlikewei/Kurumi-monitor
 
-## 许可证
+## License
 
 [GPL-3.0](LICENSE) © 2026 李白
-

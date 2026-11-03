@@ -4,7 +4,7 @@
 > CPU、GPU、内存、磁盘、网络、进程——每一项系统指标都是一只「个股」，
 > 实时 K 线、主力动向、逐笔成交、自选行情一应俱全。
 
-这是一个跑在 minimax Code 里的 Mini App：Node 服务负责采集与聚合，
+这是一个跑在 MiniMax Code 里的 Mini App：Node 服务负责采集与聚合，
 页面负责渲染，两者通过 SSE 推送每一条采样。
 
 ## 平台支持
@@ -48,14 +48,14 @@ Windows 侧的采集跑在一个常驻 PowerShell 进程里：脚本启动时预
 
 ## 安装
 
-需要 minimax Code 桌面端。
+需要 MiniMax Code 桌面端。
 
 **手动安装**
 
 1. 克隆或下载本仓库。
 2. 把 `miniapps/kurumi-monitor/` 整个目录（包含隐藏的 `.minimax-plugin/`）
    复制到 `~/.minimax/plugins/kurumi-monitor/`。
-3. 重启 minimax Code，确认插件已识别并启用。
+3. 重启 MiniMax Code，确认插件已识别并启用。
 4. 在对话里说「打开本机大盘」，或从插件列表里启动。
 
 **交给 Agent 安装**
@@ -82,7 +82,7 @@ Windows 侧的采集跑在一个常驻 PowerShell 进程里：脚本启动时预
 作者 **QiuSui**（QiuSui_Studio），一个把 Windows 任务管理器做成炒股软件行情终端的
 C# 单文件程序，采用 GPL-3.0 协议。
 
-本项目是独立实现：技术栈为 JavaScript / Node，运行在 minimax Code 的 Mini App 宿主里，
+本项目是独立实现：技术栈为 JavaScript / Node，运行在 MiniMax Code 的 Mini App 宿主里，
 两边没有共享任何源码。沿用 GPL-3.0 是出于对原作者的尊重。
 
 本项目补上了 PerfTicker 未覆盖的 macOS 采集链路，并在 Windows 侧用常驻 PowerShell
@@ -122,7 +122,7 @@ miniapps/kurumi-monitor/
 
 | 项目 | 版本 |
 | --- | --- |
-| minimax Code | 3.1.10-preview.5019 |
+| MiniMax Code | 3.1.10-preview.5019 |
 | macOS | 26.5.2（Darwin 25.5.0，arm64） |
 | Node.js | 22.22.2 |
 | PowerShell | 7.6.9（Windows 分支验证用） |
