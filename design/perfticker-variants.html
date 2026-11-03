@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kurumi 算力行情终端 · 四版视觉方案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'Outfit','PingFang SC','Hiragino Sans GB',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#f4f4f2}
+body{font-family:var(--sans);color:#14171e;-webkit-font-smoothing:antialiased}
+
+/* ---------- 页面外壳 ---------- */
+.page{max-width:1520px;margin:0 auto;padding:34px 26px 70px}
+.hero{display:grid;grid-template-columns:1fr auto;gap:28px;align-items:end;
+  padding-bottom:22px;border-bottom:1px solid #ddd9d0;margin-bottom:26px}
+.hero h1{font-size:29px;font-weight:600;letter-spacing:-.02em;line-height:1.2}
+.hero h1 em{font-style:normal;color:#8a6a3d}
+.hero p{margin-top:9px;font-size:14px;line-height:1.6;color:#5c6169;max-width:74ch}
+.hero .meta{font-family:var(--mono);font-size:11.5px;color:#8b8f96;text-align:right;line-height:1.85;white-space:nowrap}
+
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px}
+.tab{font-family:var(--sans);font-size:13.5px;font-weight:500;padding:9px 17px;border-radius:10px;
+  border:1px solid #ddd9d0;background:#fff;color:#4a5058;cursor:pointer;transition:all .16s;
+  display:flex;align-items:center;gap:8px}
+.tab:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.07)}
+.tab .sw{width:11px;height:11px;border-radius:3px;flex:none}
+.tab[aria-selected="true"]{background:#14171e;border-color:#14171e;color:#fff}
+
+.variant{display:none}
+.variant.on{display:block;animation:fade .26s ease}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+.vhead{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start;margin-bottom:15px}
+.vhead h2{font-size:19px;font-weight:600;letter-spacing:-.01em}
+.vhead .tag{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.06em;
+  text-transform:uppercase;padding:4px 9px;border-radius:6px;background:#eceae4;color:#6b6f76;
+  white-space:nowrap;justify-self:end}
+.vhead p{margin-top:7px;font-size:13.5px;line-height:1.62;color:#5c6169;max-width:82ch}
+.vhead .keys{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.key{font-family:var(--mono);font-size:11px;padding:3.5px 8px;border-radius:5px;
+  background:#fff;border:1px solid #e2ded4;color:#5c6169}
+.key b{font-weight:700;color:#14171e}
+
+/* ---------- 终端外壳 ---------- */
+.term{border-radius:14px;overflow:hidden;background:var(--bg);box-shadow:0 8px 34px -6px rgba(0,0,0,.24),0 2px 8px rgba(0,0,0,.08);
+  font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tk{display:grid;gap:1px;background:var(--seam)}
+
+/* 标题栏 */
+.tk-title{display:flex;align-items:center;gap:14px;padding:0 14px;height:44px;background:var(--panel);min-width:0;overflow:hidden}
+.brand{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-weight:700;font-size:14.5px;
+  letter-spacing:.01em;color:var(--fg);flex:none}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--up);flex:none;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 22%,transparent)}
+.brand small{font-weight:500;font-size:11px;color:var(--dim);letter-spacing:.04em;white-space:nowrap}
+.tk-title .sp{flex:1}
+.ctl{display:flex;align-items:center;gap:5px}
+.btn{font-family:var(--mono);font-size:11px;padding:4.5px 9px;border-radius:6px;border:1px solid var(--line);
+  color:var(--dim);background:var(--sunk);white-space:nowrap}
+.btn.act{background:color-mix(in srgb,var(--accent) 17%,transparent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);color:var(--accent)}
+.btn.win{padding:4.5px 8px;font-size:12px;line-height:1}
+.clock{font-size:12.5px;color:var(--fg);font-weight:500;letter-spacing:.02em;white-space:nowrap;flex:none}
+.live{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);white-space:nowrap;flex:none}
+.live i{width:6px;height:6px;border-radius:50%;background:var(--up);animation:pulse 1.9s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* 指数条 */
+.tk-index{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;background:var(--seam)}
+.ix{background:var(--panel);padding:8px 11px 9px;display:grid;gap:3px;cursor:pointer;transition:background .15s;position:relative;min-width:0;overflow:hidden}
+.ix:hover{background:var(--hover)}
+.ix.sel{background:var(--hover);box-shadow:inset 0 -2px 0 var(--accent)}
+.ix .n{font-size:10.5px;color:var(--dim);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ix .p{font-size:16px;font-weight:700;letter-spacing:-.01em;line-height:1.15;white-space:nowrap}
+.ix .d{font-size:10.5px;display:flex;gap:6px;white-space:nowrap}
+.ix canvas{width:100%;max-width:100%;min-width:0;height:20px;display:block;margin-top:1px}
+
+/* 主体三栏 */
+.tk-main{display:grid;grid-template-columns:236px minmax(0,1fr) 246px;gap:1px;background:var(--seam);min-height:404px}
+.pane{background:var(--panel);display:flex;flex-direction:column;min-width:0}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 11px;
+  border-bottom:1px solid var(--line);flex:none}
+.ph h3{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--fg);letter-spacing:.01em}
+.ph .sub{font-size:10px;color:var(--mute)}
+
+/* 自选列表 */
+.wl{overflow:hidden;flex:1}
+.grp{font-size:10px;color:var(--mute);padding:6px 11px 4px;letter-spacing:.07em;
+  background:var(--sunk);border-bottom:1px solid var(--line);font-weight:500}
+.row{display:grid;grid-template-columns:44px minmax(0,1fr) 46px 45px;gap:5px;align-items:center;
+  padding:4.5px 10px;font-size:11px;cursor:pointer;border-bottom:1px solid var(--line-soft);transition:background .12s}
+.row:hover{background:var(--hover)}
+.row.sel{background:var(--hover);box-shadow:inset 2px 0 0 var(--accent)}
+.row .cd{color:var(--mute);font-size:10.5px}
+.row .nm{color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .px{text-align:right;font-weight:500}
+.row .ch{text-align:right;font-size:10.5px}
+
+/* 品种头 */
+.qt{padding:10px 13px 11px;border-bottom:1px solid var(--line);display:grid;
+  grid-template-columns:auto 1fr;gap:14px;align-items:center;flex:none}
+.qt .id{display:grid;gap:2px}
+.qt .id .c{font-size:11px;color:var(--mute)}
+.qt .id .t{font-family:var(--sans);font-size:15px;font-weight:600;color:var(--fg);letter-spacing:.01em}
+.qt .last{display:flex;align-items:baseline;gap:11px}
+.qt .last .v{font-size:31px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.qt .last .abs{font-size:13.5px;font-weight:500}
+.qt .last .pct{font-size:12px;padding:2.5px 7px;border-radius:5px;font-weight:500}
+.ohlc{display:flex;gap:15px;font-size:10.5px;color:var(--mute);justify-self:end}
+.ohlc span b{font-weight:500;color:var(--fg);margin-left:5px}
+
+.periods{display:flex;gap:4px;padding:6px 13px;border-bottom:1px solid var(--line);flex:none;align-items:center}
+.pd{font-size:10.5px;padding:3.5px 9px;border-radius:5px;color:var(--dim);cursor:pointer;border:1px solid transparent}
+.pd:hover{background:var(--sunk)}
+.pd.on{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);
+  border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+.periods .sp{flex:1}
+.legend{display:flex;gap:11px;font-size:10px;color:var(--mute)}
+.legend i{display:inline-block;width:9px;height:2px;vertical-align:middle;margin-right:4px;border-radius:1px}
+
+.chartwrap{flex:1;position:relative;min-height:250px}
+.chartwrap canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+
+/* 五档盘口 */
+.depth{display:grid;gap:2px;padding:8px 11px}
+.dr{display:grid;grid-template-columns:20px 1fr 46px;gap:8px;align-items:center;font-size:11px}
+.dr .rk{font-size:9.5px;font-weight:700;text-align:center;border-radius:4px;padding:1.5px 0;
+  background:var(--sunk);color:var(--dim)}
+.dr:nth-child(1) .rk{background:color-mix(in srgb,var(--up) 82%,transparent);color:#fff}
+.dr:nth-child(2) .rk{background:color-mix(in srgb,var(--up) 55%,transparent);color:#fff}
+.dr:nth-child(3) .rk{background:color-mix(in srgb,var(--up) 32%,transparent);color:var(--fg)}
+.dr .nm{position:relative;height:17px;display:flex;align-items:center;padding-left:6px;
+  color:var(--fg);white-space:nowrap;overflow:hidden}
+.dr .bar{position:absolute;left:0;top:0;bottom:0;border-radius:3px;
+  background:color-mix(in srgb,var(--up) 15%,transparent);z-index:0}
+.dr .nm span{position:relative;z-index:1;font-size:10.5px}
+.dr .vl{text-align:right;font-weight:500;font-size:11px}
+
+/* 逐笔成交 */
+.tape{overflow:hidden;flex:1}
+.tp{display:grid;grid-template-columns:52px 1fr auto;gap:8px;padding:4.5px 11px;font-size:10.5px;
+  border-bottom:1px solid var(--line-soft);align-items:baseline}
+.tp .tm{color:var(--mute);font-size:10px}
+.tp .ev{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp .vl{font-weight:500;font-size:10.5px}
+
+/* 进程表 */
+.tk-procs{background:var(--panel)}
+.ptab{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px}
+.ptab th{text-align:right;font-weight:500;font-size:10px;color:var(--mute);padding:6px 11px;
+  border-bottom:1px solid var(--line);background:var(--sunk);white-space:nowrap;letter-spacing:.02em}
+.ptab th:nth-child(1),.ptab th:nth-child(2){text-align:left}
+.ptab td{padding:4.5px 11px;text-align:right;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+.ptab td:nth-child(1),.ptab td:nth-child(2){text-align:left}
+.ptab td.pn{max-width:330px;overflow:hidden;text-overflow:ellipsis;color:var(--dim)}
+.ptab tr:hover td{background:var(--hover)}
+.ptab .mini{width:62px;max-width:100%;height:17px;display:block;margin-left:auto}
+.ptab th:nth-child(1),.ptab td:nth-child(1){width:52px}
+.ptab th:nth-child(3),.ptab td:nth-child(3){width:58px}
+.ptab th:nth-child(4),.ptab td:nth-child(4){width:58px}
+.ptab th:nth-child(5),.ptab td:nth-child(5){width:62px}
+.ptab th:nth-child(6),.ptab td:nth-child(6){width:48px}
+.ptab th:nth-child(7),.ptab td:nth-child(7){width:48px}
+.ptab th:nth-child(8),.ptab td:nth-child(8){width:86px}
+.search{font-size:10.5px;padding:3.5px 9px;border-radius:5px;border:1px solid var(--line);
+  background:var(--sunk);color:var(--mute);width:132px}
+
+/* 状态栏 */
+.tk-status{display:flex;align-items:center;gap:0;height:28px;background:var(--sunk);overflow:hidden}
+.st{display:flex;gap:5px;padding:0 11px;font-size:10px;color:var(--mute);white-space:nowrap;
+  border-right:1px solid var(--line)}
+.st b{font-weight:500;color:var(--dim)}
+.marquee{flex:1;overflow:hidden;position:relative;height:100%;mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent)}
+.mq{display:flex;gap:26px;position:absolute;white-space:nowrap;top:50%;transform:translateY(-50%);
+  animation:scroll 46s linear infinite;font-size:10.5px}
+@keyframes scroll{from{left:100%}to{left:-200%}}
+.mq span b{font-weight:500;margin-left:5px}
+
+/* 涨跌色 */
+.up{color:var(--up)}.down{color:var(--down)}
+.pctup{background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up)}
+.pctdown{background:color-mix(in srgb,var(--down) 18%,transparent);color:var(--down)}
+
+/* ---------- 方案主题（挂在 section[data-variant] 上）---------- */
+/* A 深色九宫格 */
+[data-variant="a"]{--bg:#0d1117;--panel:#141a22;--sunk:#0f141b;--seam:#070a0e;--line:#212a35;--line-soft:#1a212a;
+  --fg:#e6edf5;--dim:#8b98a8;--mute:#5a6675;--hover:#1a212b;
+  --up:#ff4d4f;--down:#00b96b;--accent:#ffb020}
+
+/* C 浅色研报 */
+[data-variant="c"]{--bg:#fbfbfa;--panel:#ffffff;--sunk:#f4f5f3;--seam:#e3e3df;--line:#e8e8e4;--line-soft:#f1f1ee;
+  --fg:#1a1d21;--dim:#5f656d;--mute:#9096a0;--hover:#f7f8f6;
+  --up:#d92f2f;--down:#0a9d5a;--accent:#b1701c}
+[data-variant="c"] .term{box-shadow:0 8px 34px -8px rgba(0,0,0,.16),0 2px 8px rgba(0,0,0,.05)}
+[data-variant="c"] .brand .dot{box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 18%,transparent)}
+
+/* D 琥珀 CRT */
+[data-variant="d"]{--bg:#17130d;--panel:#1d1811;--sunk:#15110b;--seam:#0c0906;--line:#2e2517;--line-soft:#241d12;
+  --fg:#ffc861;--dim:#b58a3e;--mute:#7d6132;--hover:#251d12;
+  --up:#ffb000;--down:#4fd6c0;--accent:#ffd479}
+[data-variant="d"] .term{position:relative}
+[data-variant="d"] .term::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:5;border-radius:14px;
+  background:repeating-linear-gradient(180deg,rgba(255,176,0,.055) 0 1px,transparent 1px 3px)}
+[data-variant="d"] .tk{text-shadow:0 0 7px rgba(255,176,0,.34)}
+[data-variant="d"] .brand .dot{box-shadow:0 0 9px var(--up),0 0 0 3px rgba(255,176,0,.16)}
+[data-variant="d"] .qt .last .v{text-shadow:0 0 15px rgba(255,176,0,.5)}
+[data-variant="d"] .btn,[data-variant="d"] .pd,[data-variant="d"] .grp{border-radius:3px}
+
+/* B 窄屏堆叠 */
+[data-variant="b"]{--bg:#0d1117;--panel:#141a22;--sunk:#0f141b;--seam:#070a0e;--line:#212a35;--line-soft:#1a212a;
+  --fg:#e6edf5;--dim:#8b98a8;--mute:#5a6675;--hover:#1a212b;
+  --up:#ff4d4f;--down:#00b96b;--accent:#4d9fff}
+.narrow{max-width:452px;margin:0 auto}
+[data-variant="b"] .tk-index{grid-template-columns:repeat(4,1fr)}
+[data-variant="b"] .tk-index .ix:nth-child(n+5){display:none}
+[data-variant="b"] .tk-main{grid-template-columns:1fr;min-height:0}
+[data-variant="b"] .wl{max-height:184px;overflow-y:auto}
+[data-variant="b"] .chartwrap{min-height:212px}
+[data-variant="b"] .tk-side{display:grid;grid-template-columns:1fr;gap:1px;background:var(--seam)}
+[data-variant="b"] .tape{max-height:150px;overflow-y:auto}
+[data-variant="b"] .ptab td:nth-child(6),[data-variant="b"] .ptab th:nth-child(6),
+[data-variant="b"] .ptab td:nth-child(7),[data-variant="b"] .ptab th:nth-child(7){display:none}
+[data-variant="b"] .ptab td.pn{max-width:150px}
+[data-variant="b"] .ohlc{display:none}
+[data-variant="b"] .qt{grid-template-columns:1fr}
+[data-variant="b"] .tk-title{gap:9px;padding:0 10px}
+[data-variant="b"] .live,[data-variant="b"] .clock,[data-variant="b"] .btn.win{display:none}
+[data-variant="b"] .brand small{display:none}
+[data-variant="b"] .btn{font-size:10px;padding:4px 7px}
+[data-variant="b"] .ix{padding:7px 9px 8px}
+[data-variant="b"] .ix .p{font-size:15px}
+[data-variant="b"] .qt .last .v{font-size:27px}
+[data-variant="b"] .tk-status .st:nth-child(n+3){display:none}
+.bframe{border-radius:14px;padding:13px;background:linear-gradient(180deg,#1c2027,#12161c);
+  box-shadow:0 8px 34px -6px rgba(0,0,0,.3)}
+.blabel{text-align:center;font-family:var(--mono);font-size:10.5px;color:#7b8494;margin-top:10px;letter-spacing:.04em}
+
+/* 对比表 */
+.cmp{margin-top:44px;padding-top:26px;border-top:1px solid #ddd9d0}
+.cmp h2{font-size:19px;font-weight:600;margin-bottom:5px}
+.cmp>p{font-size:13.5px;color:#5c6169;margin-bottom:16px}
+table.cmpt{width:100%;border-collapse:collapse;font-size:13px;background:#fff;
+  border:1px solid #e4e0d7;border-radius:12px;overflow:hidden}
+table.cmpt th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;
+  color:#7c7a72;padding:11px 14px;background:#f7f5f0;border-bottom:1px solid #e4e0d7}
+table.cmpt td{padding:11px 14px;border-bottom:1px solid #f0ede6;vertical-align:top;line-height:1.55}
+table.cmpt tr:last-child td{border-bottom:0}
+table.cmpt td:first-child{font-weight:600;white-space:nowrap;width:150px}
+table.cmpt .sw{display:inline-block;width:9px;height:9px;border-radius:2.5px;margin-right:7px;vertical-align:middle}
+.note{margin-top:16px;font-size:12.5px;line-height:1.65;color:#7c7a72;max-width:88ch}
+.note code{font-family:var(--mono);font-size:11.5px;background:#eceae4;padding:1.5px 5px;border-radius:4px}
+
+@media(max-width:1180px){
+  .tk-main{grid-template-columns:200px minmax(0,1fr)}
+  .tk-side{display:none}
+  .tk-index{grid-template-columns:repeat(4,1fr)}
+  .tk-index .ix:nth-child(n+5){display:none}
+  .hero{grid-template-columns:1fr}
+  .hero .meta{text-align:left}
+  .vhead .tag{justify-self:start}
+}
+@media(max-width:760px){
+  .page{padding:22px 14px 50px}
+  .tk-main{grid-template-columns:1fr}
+  .tk-index{grid-template-columns:repeat(2,1fr)}
+  .tk-index .ix:nth-child(n+3){display:none}
+  .vhead{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div>
+      <h1>Kurumi 算力行情终端 · <em>四版视觉方案</em></h1>
+      <p>把 macOS 的 CPU / GPU / 内存 / 磁盘 / 网络 / 进程搬进 A 股行情终端的界面语言。四版共用同一套九宫格信息架构与同一组数据，差别在配色、密度与布局策略 —— 选的是视觉方向，不是重新设计信息结构。</p>
+    </div>
+    <div class="meta">
+      Apple M5 · 10 核 · 24 GiB<br>
+      GPU 41.0% · 显存 1.47 G<br>
+      内存 77.4% · 进程 6144<br>
+      实测快照 21:12:24
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-v="a" aria-selected="true"><span class="sw" style="background:#ff4d4f"></span>A · 深色九宫格</button>
+    <button class="tab" role="tab" data-v="b" aria-selected="false"><span class="sw" style="background:#4d9fff"></span>B · 窄屏堆叠</button>
+    <button class="tab" role="tab" data-v="c" aria-selected="false"><span class="sw" style="background:#d92f2f"></span>C · 浅色研报</button>
+    <button class="tab" role="tab" data-v="d" aria-selected="false"><span class="sw" style="background:#ffb000"></span>D · 琥珀 CRT</button>
+  </div>
+
+  <!-- ============ 终端模板会被 JS 克隆到四个 variant ============ -->
+  <template id="tpl">
+    <div class="term">
+      <div class="tk">
+        <div class="tk-title">
+          <div class="brand"><span class="dot"></span>Kurumi<small>算力行情终端</small></div>
+          <div class="live"><i></i>实时采样</div>
+          <div class="btn">1s</div>
+          <div class="sp"></div>
+          <div class="ctl">
+            <div class="btn act">红涨</div>
+            <div class="btn">置顶</div>
+            <div class="btn">壁纸</div>
+            <div class="btn">设置</div>
+          </div>
+          <div class="clock">21:12:24</div>
+          <div class="btn win">—</div><div class="btn win">▢</div><div class="btn win">✕</div>
+        </div>
+
+        <div class="tk-index"></div>
+
+        <div class="tk-main">
+          <div class="pane">
+            <div class="ph"><h3>自选行情</h3><span class="sub">18 项</span></div>
+            <div class="wl"></div>
+          </div>
+          <div class="pane">
+            <div class="qt">
+              <div class="id"><span class="c">600001</span><span class="t">GPU 设备占用</span></div>
+              <div class="last">
+                <span class="v up">41.0</span>
+                <span class="abs down">-3.0</span>
+                <span class="pct pctdown">-6.82%</span>
+                <span class="ohlc">
+                  <span>今开<b>44.0</b></span><span>最高<b>58.0</b></span>
+                  <span>最低<b>33.0</b></span><span>均价<b>43.6</b></span>
+                </span>
+              </div>
+            </div>
+            <div class="periods">
+              <span class="pd">2秒K</span><span class="pd on">5秒K</span><span class="pd">10秒K</span>
+              <span class="pd">30秒K</span><span class="pd">1分K</span>
+              <span class="sp"></span>
+              <span class="legend"><span><i style="background:#ffb020"></i>MA5</span><span><i style="background:#4d9fff"></i>MA10</span><span><i style="background:#b07cff"></i>MA20</span></span>
+            </div>
+            <div class="chartwrap"><canvas class="main"></canvas></div>
+          </div>
+          <div class="tk-side">
+            <div class="pane" style="flex:none">
+              <div class="ph"><h3>主力动向</h3><span class="sub">GPU 占用</span></div>
+              <div class="depth"></div>
+            </div>
+            <div class="pane">
+              <div class="ph"><h3>逐笔成交</h3><span class="sub">实时</span></div>
+              <div class="tape"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tk-procs">
+          <div class="ph"><h3>个股列表 · 进程</h3><input class="search" placeholder="搜索进程名 / PID" readonly></div>
+          <table class="ptab"><thead><tr>
+            <th>PID</th><th>进程名</th><th>CPU%</th><th>涨跌</th><th>内存</th><th>线程</th><th>句柄</th><th>迷你 K 线</th>
+          </tr></thead><tbody></tbody></table>
+        </div>
+
+        <div class="tk-status">
+          <div class="st">采样<b>1s</b></div><div class="st">运行<b>177.2h</b></div>
+          <div class="st">进程<b>6144</b></div><div class="st">线程<b>6144</b></div>
+          <div class="marquee"><div class="mq"></div></div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <section class="variant on" data-variant="a">
+    <div class="vhead">
+      <div>
+        <h2>A · 深色九宫格 —— PerfTicker 形态直译</h2>
+        <p>最忠实于原项目的视觉：纯深色底、红涨绿跌遵循 A 股习惯、字号压到 10–11px 的高密度排版。九个区块同屏铺满，一眼看到全部维度。代价是对显示宽度有要求，低于 1180px 会开始折叠右侧盘口。</p>
+        <div class="keys"><span class="key">底色 <b>#0d1117</b></span><span class="key">涨 <b>#ff4d4f</b></span><span class="key">跌 <b>#00b96b</b></span><span class="key">强调 <b>#ffb020</b></span><span class="key">密度 <b>高</b></span><span class="key">最小宽度 <b>1180px</b></span></div>
+      </div>
+      <span class="tag">复刻向</span>
+    </div>
+    <div class="slot"></div>
+  </section>
+
+  <section class="variant" data-variant="b">
+    <div class="vhead">
+      <div>
+        <h2>B · 窄屏堆叠 —— Mini App 面板原生适配</h2>
+        <p>Mini App 跑在 MCode 右侧面板里，宽度常常只有 450px 上下。这一版把九宫格竖向拆开：指数条收成 2×2、主图独占一屏、盘口与逐笔改为纵向堆叠、进程表裁掉次要列。配色沿用 A 的深色，但强调色换成蓝以区分定位 —— 它是「适配版」而非「主版」。</p>
+        <div class="keys"><span class="key">底色 <b>#0d1117</b></span><span class="key">强调 <b>#4d9fff</b></span><span class="key">目标宽度 <b>452px</b></span><span class="key">密度 <b>中</b></span></div>
+      </div>
+      <span class="tag">适配向</span>
+    </div>
+    <div class="bframe"><div class="narrow"><div class="slot"></div></div><div class="blabel">↑ 452px 宽 · MCode 右侧面板实际尺寸</div></div>
+  </section>
+
+  <section class="variant" data-variant="c">
+    <div class="vhead">
+      <div>
+        <h2>C · 浅色研报 —— PerfTicker 的默认主题</h2>
+        <p>原项目默认其实是浅色主题，深色要手动切。这一版把浅色做扎实：白底、极细的分隔线、克制的红绿、留白比 A 版宽一档。白天长时间挂着不刺眼，适合当常驻看板。代价是少了一点「终端」的暗室气质，视觉冲击弱于 A。</p>
+        <div class="keys"><span class="key">底色 <b>#fbfbfa</b></span><span class="key">涨 <b>#d92f2f</b></span><span class="key">跌 <b>#0a9d5a</b></span><span class="key">强调 <b>#b1701c</b></span><span class="key">密度 <b>中高</b></span></div>
+      </div>
+      <span class="tag">常驻向</span>
+    </div>
+    <div class="slot"></div>
+  </section>
+
+  <section class="variant" data-variant="d">
+    <div class="vhead">
+      <div>
+        <h2>D · 琥珀 CRT —— 复古行情机</h2>
+        <p>风格化最激进的一版：磷光琥珀单色、叠加扫描线、文字带辉光、圆角全部压到 3px 模仿老式终端机。跌色用青绿而非纯绿，保持在单色体系内不打架。气质最强，但也最容易看腻 —— 长时间盯盘的疲劳感和「到底在不在认真显示数据」的疑虑都是真实代价。</p>
+        <div class="keys"><span class="key">底色 <b>#17130d</b></span><span class="key">主色 <b>#ffb000</b></span><span class="key">跌 <b>#4fd6c0</b></span><span class="key">扫描线 <b>3px 周期</b></span><span class="key">密度 <b>高</b></span></div>
+      </div>
+      <span class="tag">风格向</span>
+    </div>
+    <div class="slot"></div>
+  </section>
+
+  <div class="cmp">
+    <h2>怎么选</h2>
+    <p>四版的取舍集中在三件事：信息密度、暗室气质、以及它到底要在多宽的地方活着。</p>
+    <table class="cmpt">
+      <thead><tr><th>方案</th><th>强在</th><th>弱在</th><th>适合</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sw" style="background:#ff4d4f"></span>A 深色九宫格</td>
+          <td>视觉冲击最强，信息一屏打尽，与原项目气质完全一致</td>
+          <td>吃宽度，窄屏折叠后右侧盘口会消失</td>
+          <td>外接显示器上全屏挂着，当主看板</td></tr>
+        <tr><td><span class="sw" style="background:#4d9fff"></span>B 窄屏堆叠</td>
+          <td>唯一能在 MCode 面板里完整成立的版本，纵向滚动自然</td>
+          <td>同屏信息量约为 A 的六成，进程表列被裁</td>
+          <td>日常就在 MCode 里开着，不切窗口</td></tr>
+        <tr><td><span class="sw" style="background:#d92f2f"></span>C 浅色研报</td>
+          <td>白天友好，留白舒展，长时间看不累</td>
+          <td>终端的暗室感没了，第一眼不如 A 抓人</td>
+          <td>和浅色工作环境搭配，当第二块屏</td></tr>
+        <tr><td><span class="sw" style="background:#ffb000"></span>D 琥珀 CRT</td>
+          <td>气质独一无二，截图传播力最强</td>
+          <td>扫描线和辉光长期看会累，风格压过数据本身</td>
+          <td>想要一个「玩具」而非工具</td></tr>
+      </tbody>
+    </table>
+    <p class="note">也可以组合：<code>A</code> 做桌面主版 + <code>B</code> 做面板适配版，主题变量本来就是同一套 CSS token，切换成本很低。<code>C</code> 和 <code>D</code> 同理，只是换 <code>--up / --down / --bg</code> 几个值。真正要定的是主视觉走哪一版。</p>
+  </div>
+
+</div>
+
+<script>
+/* ============ 固定种子伪随机，保证四版数据一致 ============ */
+function lcg(seed){let s=seed>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+
+function series(seed,base,vol,n){
+  const r=lcg(seed);const out=[];let p=base;
+  for(let i=0;i<n;i++){
+    const drift=(base-p)*0.14;                      // 均值回归
+    const shock=(r()-0.5)*vol;
+    const o=p; let c=p+drift+shock;
+    c=Math.max(base*0.42,Math.min(base*1.62,c));
+    const wick=Math.abs(shock)*0.85+r()*vol*0.5;
+    const h=Math.max(o,c)+wick, l=Math.min(o,c)-wick*(0.6+r()*0.7);
+    out.push({o,h,l,c,v:Math.round(28+r()*86+Math.abs(shock)*4.2)});
+    p=c;
+  }
+  return out;
+}
+function closes(a){return a.map(d=>d.c)}
+function ma(a,n){return closes(a).map((_,i)=>{const s=Math.max(0,i-n+1);const w=a.slice(s,i+1);return w.reduce((x,d)=>x+d.c,0)/w.length})}
+
+const BARS=64;
+const DATA={
+  gpu:series(20261102,41,7.4,BARS),
+  cpu:series(77311,68,9.1,BARS),
+  mem:series(4491,77,2.1,BARS),
+  net:series(9091,2.4,1.5,BARS),
+  disk:series(5521,13.8,7.2,BARS)
+};
+
+const INDEX=[
+  {n:'CPU 综合',p:'68.4',c:'+2.1',u:1,k:'cpu'},
+  {n:'CPU 负载',p:'4.81',c:'+0.34',u:1,k:'cpu'},
+  {n:'GPU 占用',p:'41.0',c:'-3.0',u:0,k:'gpu'},
+  {n:'GPU 显存',p:'1.47G',c:'+0.09G',u:1,k:'mem'},
+  {n:'内存占用',p:'77.4',c:'+0.2',u:1,k:'mem'},
+  {n:'Renderer',p:'40.0',c:'-2.0',u:0,k:'gpu'},
+  {n:'网络下行',p:'2.41M',c:'+0.88M',u:1,k:'net'},
+  {n:'进程数',p:'6144',c:'+12',u:1,k:'disk'}
+];
+
+const WATCH=[
+  ['【CPU 板块】',null],
+  ['000001','CPU 综合','68.4','+2.1',1],['000002','1 分负载','4.81','+0.34',1],
+  ['000003','用户态','41.2','+1.4',1],['000004','系统态','27.2','+0.7',1],
+  ['000010','核心 0','72.1','+4.2',1],['000011','核心 1','65.8','-1.9',0],
+  ['【GPU 板块】',null],
+  ['600001','设备占用','41.0','-3.0',0],['600002','Renderer','40.0','-2.0',0],
+  ['600003','Tiler','8.0','+1.0',1],['600004','显存占用','1.47G','+0.09G',1],
+  ['【内存 板块】',null],
+  ['300001','活动页','7.17G','+0.04G',1],['300002','联动页','4.78G','+0.01G',1],
+  ['300003','可清除','241M','-18M',0],
+  ['【IO 板块】',null],
+  ['002001','磁盘读','13.86M','+5.2M',1],['002002','磁盘写','4.21M','-1.1M',0],
+  ['001001','网络下行','2.41M','+0.88M',1],['001002','网络上行','341K','-52K',0],
+  ['【系统 板块】',null],
+  ['900001','进程数','6144','+12',1],['900002','线程数','6144','+38',1]
+];
+
+const DEPTH=[
+  ['node',128.5],['MCode Helper',28.9],['MCode Renderer',27.3],
+  ['WindowServer',25.5],['Typeless',11.2],['QQPCMgr',10.6],
+  ['coreaudiod',4.8],['hidd',3.1],['bluetoothd',2.4],['mds_stores',1.9]
+];
+
+const TAPE=[
+  ['21:12:24','GPU 设备占用回落','41.0','d'],['21:12:19','进程启动 · node','6923','u'],
+  ['21:12:14','CPU 负载突破 5.0','5.02','u'],['21:12:09','磁盘写突发','+18M/s','u'],
+  ['21:12:04','进程退出 · ffmpeg','6811','d'],['21:11:58','Renderer 占用跳升','+7.0','u'],
+  ['21:11:52','内存活动页上探','7.21G','u'],['21:11:47','Tiler 回落','8.0','d'],
+  ['21:11:41','核心 1 降频','-2.4','d'],['21:11:36','进程启动 · swift-frontend','6702','u'],
+  ['21:11:30','网络下行尖峰','+1.2M','u'],['21:11:25','GPU 显存释放','-64M','d'],
+  ['21:11:19','CPU 综合上穿 70','70.1','u'],['21:11:14','进程退出 · clang','6655','d']
+];
+
+const PROCS=[
+  [6923,'node',128.5,'+34.2',2914288,11,412,'gpu'],
+  [65695,'MCode Helper',28.9,'+6.1',830736,7,238,'cpu'],
+  [65740,'MCode Renderer',27.3,'+4.8',927008,9,301,'gpu'],
+  [409,'WindowServer',25.5,'-1.2',119664,6,884,'cpu'],
+  [1247,'Typeless',11.2,'+2.4',136992,4,176,'mem'],
+  [94844,'QQPCMgr',10.6,'-0.8',232848,5,92,'mem'],
+  [1183,'coreaudiod',4.8,'+0.3',18432,3,64,'net'],
+  [231,'bluetoothd',2.4,'+0.1',12288,2,48,'net'],
+  [577,'mds_stores',1.9,'-0.4',45056,4,131,'disk'],
+  [3021,'swift-frontend',1.4,'+1.4',96256,8,207,'disk']
+];
+
+const MQ=['CPU 综合','GPU 占用','内存活动页','网络下行','磁盘读','Renderer','进程数','Tiler','核心 0','显存占用'];
+
+/* ============ K 线渲染 ============ */
+function css(el,n){return getComputedStyle(el).getPropertyValue(n).trim()}
+
+function drawMain(cv,el){
+  const dpr=window.devicePixelRatio||1;
+  const r=cv.getBoundingClientRect();
+  if(r.width<2||r.height<2)return;
+  cv.width=r.width*dpr;cv.height=r.height*dpr;
+  const g=cv.getContext('2d');g.scale(dpr,dpr);
+  const W=r.width,H=r.height;
+
+  const up=css(el,'--up'),down=css(el,'--down');
+  const line=css(el,'--line'),mute=css(el,'--mute'),fg=css(el,'--fg'),dim=css(el,'--dim');
+  const A=DATA.gpu;
+  const m5=ma(A,5),m10=ma(A,10),m20=ma(A,20);
+
+  const PL=8,PR=54,PT=9;
+  const volH=Math.max(30,H*0.17);
+  const PB=18;
+  const priceH=H-PT-volH-PB-6;
+  const plotW=W-PL-PR;
+
+  let lo=Infinity,hi=-Infinity;
+  A.forEach(d=>{lo=Math.min(lo,d.l);hi=Math.max(hi,d.h)});
+  const pad=(hi-lo)*0.10;lo-=pad;hi+=pad;
+  const Y=v=>PT+priceH-(v-lo)/(hi-lo)*priceH;
+  const bw=plotW/BARS;
+  const cw=Math.max(1.6,Math.min(9,bw*0.66));
+
+  // 网格
+  g.strokeStyle=line;g.lineWidth=1;g.font='10px "JetBrains Mono",monospace';
+  g.textAlign='left';g.textBaseline='middle';
+  for(let i=0;i<=4;i++){
+    const y=Math.round(PT+priceH/4*i)+.5;
+    g.beginPath();g.moveTo(PL,y);g.lineTo(PL+plotW,y);g.stroke();
+    const v=hi-(hi-lo)/4*i;
+    g.fillStyle=mute;g.fillText(v.toFixed(1),PL+plotW+7,y);
+  }
+  const volTop=PT+priceH+6;
+  g.beginPath();g.moveTo(PL,Math.round(volTop)+.5);g.lineTo(PL+plotW,Math.round(volTop)+.5);g.stroke();
+  let vmax=0;A.forEach(d=>vmax=Math.max(vmax,d.v));
+
+  // 蜡烛
+  A.forEach((d,i)=>{
+    const cx=PL+bw*i+bw/2;
+    const rise=d.c>=d.o, col=rise?up:down;
+    g.strokeStyle=col;g.fillStyle=col;g.lineWidth=1;
+    g.beginPath();g.moveTo(Math.round(cx)+.5,Y(d.h));g.lineTo(Math.round(cx)+.5,Y(d.l));g.stroke();
+    const yo=Y(d.o),yc=Y(d.c);
+    const top=Math.min(yo,yc),hgt=Math.max(1.1,Math.abs(yc-yo));
+    g.fillRect(cx-cw/2,top,cw,hgt);
+    // 成交量
+    const vh=d.v/vmax*volH;
+    g.globalAlpha=.42;g.fillRect(cx-cw/2,volTop+volH-vh,cw,vh);g.globalAlpha=1;
+  });
+
+  // 均线
+  const line_=(arr,col)=>{
+    g.strokeStyle=col;g.lineWidth=1.3;g.lineJoin='round';g.beginPath();
+    arr.forEach((v,i)=>{const x=PL+bw*i+bw/2,y=Y(v);i?g.lineTo(x,y):g.moveTo(x,y)});
+    g.stroke();
+  };
+  line_(m5,'#ffb020');line_(m10,'#4d9fff');line_(m20,'#b07cff');
+
+  // 最新价横线
+  const last=A[BARS-1].c, ly=Y(last), lc=last>=A[BARS-1].o?up:down;
+  g.save();g.setLineDash([3,3]);g.strokeStyle=lc;g.lineWidth=1;
+  g.beginPath();g.moveTo(PL,Math.round(ly)+.5);g.lineTo(PL+plotW,Math.round(ly)+.5);g.stroke();g.restore();
+  g.fillStyle=lc;g.fillRect(PL+plotW+3,ly-8,PR-6,16);
+  g.fillStyle='#fff';g.font='700 10px "JetBrains Mono",monospace';
+  g.fillText(last.toFixed(1),PL+plotW+8,ly);
+
+  // 时间轴
+  g.fillStyle=mute;g.font='9.5px "JetBrains Mono",monospace';g.textBaseline='top';
+  ['21:07','21:09','21:11','21:12'].forEach((t,i)=>{
+    const x=PL+plotW*(i/3);
+    g.textAlign=i===0?'left':(i===3?'right':'center');
+    g.fillText(t,Math.min(Math.max(x,PL),PL+plotW),volTop+volH+5);
+  });
+  g.textAlign='left';g.textBaseline='alphabetic';
+
+  cv._meta={A,PL,plotW,bw,PT,priceH,volTop,volH,Y,up,down,m5,m10,m20,line,mute,fg,dim,lo,hi};
+}
+
+function drawCross(cv,el,mx){
+  const m=cv._meta;if(!m)return;
+  drawMain(cv,el);
+  const g=cv.getContext('2d');
+  const r=cv.getBoundingClientRect();
+  if(mx==null)return;
+  let i=Math.floor((mx-m.PL)/m.bw);
+  i=Math.max(0,Math.min(BARS-1,i));
+  const d=m.A[i],cx=m.PL+m.bw*i+m.bw/2;
+  const W=r.width,H=r.height;
+
+  g.save();g.setLineDash([2,3]);g.strokeStyle=m.mute;g.lineWidth=1;
+  g.beginPath();g.moveTo(Math.round(cx)+.5,m.PT);g.lineTo(Math.round(cx)+.5,m.volTop+m.volH);g.stroke();
+  const y=m.Y(d.c);
+  g.beginPath();g.moveTo(m.PL,Math.round(y)+.5);g.lineTo(m.PL+m.plotW,Math.round(y)+.5);g.stroke();
+  g.restore();
+
+  const rise=d.c>=d.o,col=rise?m.up:m.down;
+  const prev=i>0?m.A[i-1].c:d.o;
+  const chg=d.c-prev,pct=chg/prev*100;
+
+  const lines=[
+    ['开',d.o.toFixed(1)],['高',d.h.toFixed(1)],['低',d.l.toFixed(1)],['收',d.c.toFixed(1)],
+    ['涨跌',(chg>=0?'+':'')+chg.toFixed(1)],['幅',(pct>=0?'+':'')+pct.toFixed(2)+'%'],
+    ['量',d.v],['MA5',m.m5[i].toFixed(1)]
+  ];
+  const bw=124,bh=lines.length*15+13;
+  let bx=cx+13; if(bx+bw>m.PL+m.plotW) bx=cx-bw-13;
+  let by=Math.max(m.PT+3,Math.min(y-42,H-bh-24));
+  g.fillStyle=css(el,'--sunk');g.globalAlpha=.97;
+  g.beginPath();g.roundRect(bx,by,bw,bh,7);g.fill();
+  g.globalAlpha=1;g.strokeStyle=m.line;g.lineWidth=1;g.stroke();
+  g.font='10px "JetBrains Mono",monospace';g.textBaseline='middle';
+  lines.forEach((L,k)=>{
+    const yy=by+13+k*15;
+    g.fillStyle=m.mute;g.textAlign='left';g.fillText(L[0],bx+9,yy);
+    g.fillStyle=(k>=4&&k<=5)?col:m.fg;g.textAlign='right';
+    g.font=(k>=4&&k<=5?'700 ':'')+'10px "JetBrains Mono",monospace';
+    g.fillText(String(L[1]),bx+bw-9,yy);
+    g.font='10px "JetBrains Mono",monospace';
+  });
+  g.textAlign='left';g.textBaseline='alphabetic';
+}
+
+function drawMini(cv,el,key,up){
+  const dpr=window.devicePixelRatio||1;
+  const r=cv.getBoundingClientRect();
+  if(r.width<2||r.height<2)return;
+  cv.width=r.width*dpr;cv.height=r.height*dpr;
+  const g=cv.getContext('2d');g.scale(dpr,dpr);
+  const A=DATA[key],cl=closes(A);
+  const lo=Math.min(...cl),hi=Math.max(...cl),span=(hi-lo)||1;
+  const W=r.width,H=r.height,P=2;
+  const col=up?css(el,'--up'):css(el,'--down');
+  g.strokeStyle=col;g.lineWidth=1.3;g.lineJoin='round';g.beginPath();
+  cl.forEach((v,i)=>{
+    const x=P+(W-P*2)*i/(cl.length-1);
+    const y=P+(H-P*2)*(1-(v-lo)/span);
+    i?g.lineTo(x,y):g.moveTo(x,y);
+  });
+  g.stroke();
+  g.lineTo(W-P,H);g.lineTo(P,H);g.closePath();
+  g.globalAlpha=.13;g.fillStyle=col;g.fill();g.globalAlpha=1;
+}
+
+function drawSpark(cv,el,key,up){
+  const dpr=window.devicePixelRatio||1;
+  const r=cv.getBoundingClientRect();
+  if(r.width<2)return;
+  cv.width=r.width*dpr;cv.height=r.height*dpr;
+  const g=cv.getContext('2d');g.scale(dpr,dpr);
+  const A=DATA[key],cl=closes(A);
+  const lo=Math.min(...cl),hi=Math.max(...cl),span=(hi-lo)||1;
+  const W=r.width,H=r.height,P=1.5;
+  g.strokeStyle=up?css(el,'--up'):css(el,'--down');g.lineWidth=1.1;g.beginPath();
+  cl.forEach((v,i)=>{
+    const x=P+(W-P*2)*i/(cl.length-1), y=P+(H-P*2)*(1-(v-lo)/span);
+    i?g.lineTo(x,y):g.moveTo(x,y);
+  });
+  g.stroke();
+}
+
+/* ============ 组装 ============ */
+function build(root){
+  const tpl=document.getElementById('tpl').content.cloneNode(true);
+
+  // 指数条
+  const ix=tpl.querySelector('.tk-index');
+  INDEX.forEach((d,i)=>{
+    const el=document.createElement('div');
+    el.className='ix'+(i===2?' sel':'');
+    el.innerHTML='<span class="n">'+d.n+'</span>'+
+      '<span class="p '+(d.u?'up':'down')+'">'+d.p+'</span>'+
+      '<span class="d '+(d.u?'up':'down')+'"><span>'+d.c+'</span></span>'+
+      '<canvas></canvas>';
+    ix.appendChild(el);
+  });
+
+  // 自选
+  const wl=tpl.querySelector('.wl');
+  WATCH.forEach(w=>{
+    if(w[1]===null){const g=document.createElement('div');g.className='grp';g.textContent=w[0];wl.appendChild(g);return}
+    const r=document.createElement('div');
+    r.className='row'+(w[0]==='600001'?' sel':'');
+    r.innerHTML='<span class="cd">'+w[0]+'</span><span class="nm">'+w[1]+'</span>'+
+      '<span class="px '+(w[4]?'up':'down')+'">'+w[2]+'</span>'+
+      '<span class="ch '+(w[4]?'up':'down')+'">'+w[3]+'</span>';
+    wl.appendChild(r);
+  });
+
+  // 五档
+  const dp=tpl.querySelector('.depth');
+  const dmax=DEPTH[0][1];
+  DEPTH.forEach((d,i)=>{
+    const r=document.createElement('div');r.className='dr';
+    r.innerHTML='<span class="rk">'+(i+1)+'</span>'+
+      '<span class="nm"><span class="bar" style="width:'+(d[1]/dmax*100)+'%"></span><span>'+d[0]+'</span></span>'+
+      '<span class="vl up">'+d[1].toFixed(1)+'</span>';
+    dp.appendChild(r);
+  });
+
+  // 逐笔
+  const tp=tpl.querySelector('.tape');
+  TAPE.forEach(t=>{
+    const r=document.createElement('div');r.className='tp';
+    r.innerHTML='<span class="tm">'+t[0]+'</span><span class="ev">'+t[1]+'</span>'+
+      '<span class="vl '+(t[3]==='u'?'up':'down')+'">'+t[2]+'</span>';
+    tp.appendChild(r);
+  });
+
+  // 进程表
+  const tb=tpl.querySelector('.ptab tbody');
+  PROCS.forEach(p=>{
+    const tr=document.createElement('tr');
+    const u=!String(p[3]).startsWith('-');
+    tr.innerHTML='<td>'+p[0]+'</td><td class="pn">'+p[1]+'</td>'+
+      '<td class="'+(p[2]>50?'up':'')+'">'+p[2].toFixed(1)+'</td>'+
+      '<td class="'+(u?'up':'down')+'">'+p[3]+'</td>'+
+      '<td>'+(p[4]/1048576).toFixed(1)+'M</td><td>'+p[5]+'</td><td>'+p[6]+'</td>'+
+      '<td><canvas class="mini" data-k="'+p[7]+'" data-u="'+(u?1:0)+'"></canvas></td>';
+    tb.appendChild(tr);
+  });
+
+  // 跑马灯
+  const mq=tpl.querySelector('.mq');
+  const items=MQ.map((n,i)=>{
+    const d=INDEX[i%INDEX.length];
+    return '<span><span style="color:var(--mute)">'+n+'</span> <span style="color:var(--fg)">'+
+      d.p+'</span><b class="'+(d.u?'up':'down')+'">'+d.c+'</b></span>';
+  }).join('');
+  mq.innerHTML=items+items;
+
+  root.appendChild(tpl);
+}
+
+function paint(root){
+  const main=root.querySelector('canvas.main');
+  if(main){
+    drawMain(main,root);
+    main.onmousemove=e=>{
+      const r=main.getBoundingClientRect();
+      drawCross(main,root,e.clientX-r.left);
+    };
+    main.onmouseleave=()=>drawMain(main,root);
+  }
+  root.querySelectorAll('.ix canvas').forEach((cv,i)=>drawMini(cv,root,INDEX[i].k,INDEX[i].u));
+  root.querySelectorAll('canvas.mini').forEach(cv=>drawSpark(cv,root,cv.dataset.k,cv.dataset.u==='1'));
+}
+
+document.querySelectorAll('.variant').forEach(v=>build(v.querySelector('.slot')));
+
+function show(k){
+  document.querySelectorAll('.variant').forEach(v=>v.classList.toggle('on',v.dataset.variant===k));
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.v===k)));
+  const v=document.querySelector('.variant[data-variant="'+k+'"]');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>paint(v)));
+  history.replaceState(null,'','#'+k);
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>show(t.dataset.v)));
+
+const init=(location.hash||'#a').slice(1);
+show(['a','b','c','d'].includes(init)?init:'a');
+
+let rt;
+addEventListener('resize',()=>{
+  clearTimeout(rt);
+  rt=setTimeout(()=>{const v=document.querySelector('.variant.on');if(v)paint(v)},130);
+});
+document.fonts&&document.fonts.ready.then(()=>{const v=document.querySelector('.variant.on');if(v)paint(v)});
+</script>
+</body>
+</html>
