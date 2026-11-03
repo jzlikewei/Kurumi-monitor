@@ -7,6 +7,8 @@
 这是一个跑在 MiniMax Code 里的 Mini App：Node 服务负责采集与聚合，
 页面负责渲染，两者通过 SSE 推送每一条采样。
 
+![本机大盘全景：顶栏、指数条、三栏主体、进程表与状态栏](miniapps/kurumi-monitor/docs/screenshots/1-board.jpg)
+
 ## 平台支持
 
 | 平台 | 采集方式 | 指标数 | 验证状态 |
@@ -45,6 +47,20 @@ Windows 侧的采集跑在一个常驻 PowerShell 进程里：脚本启动时预
 
 红涨绿跌遵循 A 股习惯，标题栏「绿涨」按钮可切换为国际配色。
 涨跌始终带 `+` / `−` 符号，不依赖颜色传达方向。
+
+主图给出品种头（今开、最高、最低、均价）、K 线与 MA5/10/20，副图是内存构成三色堆叠：
+
+![主图特写：品种头、K 线、MA5/10/20 与内存构成三色堆叠副图](miniapps/kurumi-monitor/docs/screenshots/2-chart.jpg)
+
+指数条八格，每格带一条迷你 K 线，最左边是应用图标：
+
+![指数条特写：应用图标领在最左，后接八格行情](miniapps/kurumi-monitor/docs/screenshots/3-indexbar.jpg)
+
+个股列表可按任意列排序，每行一条走势迷你 K 线：
+
+![进程表特写：按常驻内存降序，每行一条走势迷你 K 线](miniapps/kurumi-monitor/docs/screenshots/4-procs.jpg)
+
+截图里的应用名做了马赛克处理，其余内容是下方「测试环境」那台机器的实时输出。
 
 ## 安装
 
