@@ -9,6 +9,18 @@
 
 ![本机大盘全景：顶栏、指数条、三栏主体、进程表与状态栏](miniapps/kurumi-monitor/docs/screenshots/1-board.jpg)
 
+## 致谢
+
+界面语言与交互规格的灵感来自 [PerfTicker](https://github.com/QiuSui1145/PerfTicker)，
+作者 **QiuSui**（QiuSui_Studio），一个把 Windows 任务管理器做成炒股软件行情终端的
+C# 单文件程序，采用 GPL-3.0 协议。
+
+本项目是独立实现：技术栈为 JavaScript / Node，运行在 minimax Code 的 Mini App 宿主里，
+两边没有共享任何源码。沿用 GPL-3.0 是出于对原作者的尊重。
+
+本项目补上了 PerfTicker 未覆盖的 macOS 采集链路，并在 Windows 侧用常驻 PowerShell
+重做了同一套指标。
+
 ## 平台支持
 
 | 平台 | 采集方式 | 指标数 | 验证状态 |
@@ -91,18 +103,6 @@ Windows 侧的采集跑在一个常驻 PowerShell 进程里：脚本启动时预
   Windows 为 `%TEMP%\kurumi-monitor/`），由系统自行清理；
   偏好设置写入 `~/.minimax/v2/plugin-data/liveboards/kurumi-monitor/settings.json`。
 - **不联网**：所有采集与渲染都在本机完成，没有任何外部请求。
-
-## 致谢
-
-界面语言与交互规格的灵感来自 [PerfTicker](https://github.com/QiuSui1145/PerfTicker)，
-作者 **QiuSui**（QiuSui_Studio），一个把 Windows 任务管理器做成炒股软件行情终端的
-C# 单文件程序，采用 GPL-3.0 协议。
-
-本项目是独立实现：技术栈为 JavaScript / Node，运行在 MiniMax Code 的 Mini App 宿主里，
-两边没有共享任何源码。沿用 GPL-3.0 是出于对原作者的尊重。
-
-本项目补上了 PerfTicker 未覆盖的 macOS 采集链路，并在 Windows 侧用常驻 PowerShell
-重做了同一套指标。
 
 ## 开发
 
