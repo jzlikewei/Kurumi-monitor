@@ -68,6 +68,15 @@ export async function sampleGpu() {
   };
 }
 
+// ---------------------------------------------------------------- 温度
+
+// Apple Silicon 的 GPU 温度与功耗要走 IOReport，读取需要特权 helper；
+// CPU 温度要从 SMC 键读，Node 里没有原生模块也拿不到。
+// 这条路径上三项恒为空，页面显示「—」。
+export async function sampleThermal() {
+  return { gpuTempC: null, gpuPowerW: null, zoneTempC: null };
+}
+
 // ---------------------------------------------------------------- 磁盘
 
 export async function sampleDiskRaw() {

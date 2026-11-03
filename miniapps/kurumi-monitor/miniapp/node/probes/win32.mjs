@@ -184,6 +184,17 @@ export async function sampleGpu() {
   };
 }
 
+/**
+ * 温度与功耗。GPU 读数来自 NVIDIA 驱动，热区来自 ACPI，
+ * 两者都只在每 5 轮的整类查询里刷新，中间几轮沿用缓存值。
+ * 没有 N 卡或机器不暴露热区时，对应字段为 null。
+ */
+export async function sampleThermal() {
+  await ensure();
+  const g = latest?.gpu;
+  return { gpuTempC: ok(g?.temp), gpuPowerW: ok(g?.power), zoneTempC: ok(g?.zone) };
+}
+
 export async function sampleDiskRaw() {
   await ensure();
   const d = latest?.disk;

@@ -85,10 +85,20 @@ try { $totalMem = [double](Get-CimInstance Win32_ComputerSystem).TotalPhysicalMe
 # and stop, so counter objects cannot be prebuilt and the whole class must be
 # queried. That costs an order of magnitude more than the rest, so refresh every
 # 5 rounds and reuse the cached values in between, keeping every tick populated.
-$script:gpuCache = @{ device = -1; render = -1; tiler = -1; vramUsed = -1; vramAlloc = -1 }
+$script:gpuCache = @{ device = -1; render = -1; tiler = -1; vramUsed = -1; vramAlloc = -1; temp = -1; power = -1; zone = -1 }
+
+# nvidia-smi lives next to the driver and is not always on PATH
+$script:nvSmi = $null
+foreach ($cand in @('nvidia-smi', "$env:SystemRoot\System32\nvidia-smi.exe", "$env:ProgramFiles\NVIDIA Corporation\NVSMI\nvidia-smi.exe")) {
+  if ($script:nvSmi) { break }
+  try {
+    $found = Get-Command $cand -ErrorAction SilentlyContinue
+    if ($found) { $script:nvSmi = $found.Source }
+  } catch { }
+}
 
 function Update-Gpu {
-  $r = @{ device = 0.0; render = 0.0; tiler = 0.0; vramUsed = 0.0; vramAlloc = 0.0 }
+  $r = @{ device = 0.0; render = 0.0; tiler = 0.0; vramUsed = 0.0; vramAlloc = 0.0; temp = -1; power = -1; zone = -1 }
   $ok = $false
   try {
     $engines = Get-CimInstance -ClassName Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine
@@ -116,6 +126,30 @@ function Update-Gpu {
       $r.vramAlloc += [double]$m.DedicatedUsage + [double]$m.SharedUsage
     }
     $ok = $true
+  } catch { }
+
+  # GPU temperature and power come from the NVIDIA driver. Cards that do not
+  # report power answer [N/A], which fails the cast and leaves the field at -1.
+  if ($script:nvSmi) {
+    try {
+      $line = & $script:nvSmi --query-gpu=temperature.gpu,power.draw --format=csv,noheader,nounits 2>$null | Select-Object -First 1
+      if ($line) {
+        $parts = $line -split ','
+        try { $r.temp = [double]$parts[0].Trim() } catch { }
+        if ($parts.Count -gt 1) { try { $r.power = [double]$parts[1].Trim() } catch { } }
+        $ok = $true
+      }
+    } catch { }
+  }
+
+  # ACPI thermal zone. CurrentTemperature is in tenths of a kelvin.
+  # Many machines expose no zone at all, which leaves the field at -1.
+  try {
+    $tz = Get-CimInstance -Namespace root/wmi -ClassName MSAcpi_ThermalZoneTemperature -ErrorAction SilentlyContinue
+    if ($tz) {
+      $max = ($tz | Measure-Object -Property CurrentTemperature -Maximum).Maximum
+      if ($max -gt 0) { $r.zone = $max / 10 - 273.15 }
+    }
   } catch { }
 
   if ($ok) {
@@ -178,7 +212,8 @@ while ($true) {
 
   $g = $script:gpuCache
   $gpuJson = '"device":' + $g.device + ',"render":' + $g.render + ',"tiler":' + $g.tiler +
-             ',"vramUsed":' + $g.vramUsed + ',"vramAlloc":' + $g.vramAlloc
+             ',"vramUsed":' + $g.vramUsed + ',"vramAlloc":' + $g.vramAlloc +
+             ',"temp":' + $g.temp + ',"power":' + $g.power + ',"zone":' + $g.zone
 
   $diskJson = '"read":' + (Get-Raw $cDiskRead) + ',"write":' + (Get-Raw $cDiskWrite) +
               ',"opR":' + (Get-Raw $cDiskOpR) + ',"opW":' + (Get-Raw $cDiskOpW)

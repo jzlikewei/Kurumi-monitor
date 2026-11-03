@@ -62,6 +62,7 @@ export const uptimeHours = () => os.uptime() / 3600;
 export const loadAvg = () => impl.loadAvg();
 export const sampleMem = () => impl.sampleMem();
 export const sampleGpu = () => impl.sampleGpu();
+export const sampleThermal = () => impl.sampleThermal();
 export const sampleDiskRaw = () => impl.sampleDiskRaw();
 export const sampleNetRaw = () => impl.sampleNetRaw();
 export const sampleThreadRows = () => impl.sampleThreadRows();

@@ -8,7 +8,7 @@ import { extname, join, normalize, sep } from 'node:path';
 
 import {
   coreCount, disposeProbes, loadAvg, sampleCpu, sampleDiskRaw, sampleGpu, sampleMem,
-  sampleNetRaw, sampleProcs, sampleThreadRows, PROC_ROW_CAP, uptimeHours,
+  sampleNetRaw, sampleProcs, sampleThermal, sampleThreadRows, PROC_ROW_CAP, uptimeHours,
 } from './probes/index.mjs';
 import {
   buildCatalog, DEFAULT_CODE, INDEX_CODES, MEM_SEGMENTS, PERIODS, SAMPLE_TIERS,
@@ -174,8 +174,8 @@ export async function start(context) {
 
     // CPU 先取差分基准，再并发跑外部命令
     const cpu = sampleCpu();
-    const [mem, gpu, diskRaw, netRaw, procs, threadRows] = await Promise.all([
-      sampleMem(), sampleGpu(), sampleDiskRaw(), sampleNetRaw(),
+    const [mem, gpu, thermal, diskRaw, netRaw, procs, threadRows] = await Promise.all([
+      sampleMem(), sampleGpu(), sampleThermal(), sampleDiskRaw(), sampleNetRaw(),
       sampleProcs(store.settings.sampleMs), sampleThreadRows(),
     ]);
 
@@ -215,6 +215,7 @@ export async function start(context) {
       '000005': cpu.user, '000006': cpu.sys, '000007': cpu.idle,
       '600001': gpu?.device ?? null, '600002': gpu?.renderer ?? null, '600003': gpu?.tiler ?? null,
       '600004': gpu?.vramUsedGiB ?? null, '600005': gpu?.vramAllocGiB ?? null,
+      '700001': thermal.gpuTempC, '700002': thermal.gpuPowerW, '700003': thermal.zoneTempC,
       // 内存三段是定长槽位，两个平台各填自己的分段，指标代码与历史序列保持稳定
       '300001': mem.pct, '300002': mem.segments?.[0], '300003': mem.segments?.[1],
       '300004': mem.free, '300005': mem.extra, '300006': mem.segments?.[2],
@@ -318,6 +319,7 @@ export async function start(context) {
 
     const alerts = [
       ['000001', 88, 'CPU 占用'], ['600001', 92, 'GPU 占用'], ['300001', 90, '内存占用'],
+      ['700001', 85, 'GPU 温度'], ['700003', 80, '热区温度'],
     ];
     for (const [code, limit, label] of alerts) {
       const val = v[code];

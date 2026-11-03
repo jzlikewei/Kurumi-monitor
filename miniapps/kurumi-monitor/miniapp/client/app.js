@@ -182,7 +182,7 @@ function repaintSparks() {
 // ---------------------------------------------------------------- 我的自选 / 大盘行情
 
 const BOARD_NAMES = {
-  cpu: 'CPU 板块', gpu: 'GPU 板块', mem: '内存 板块',
+  cpu: 'CPU 板块', gpu: 'GPU 板块', thermal: '温度 板块', mem: '内存 板块',
   disk: '磁盘 板块', net: '网络 板块', sys: '系统 板块',
 };
 

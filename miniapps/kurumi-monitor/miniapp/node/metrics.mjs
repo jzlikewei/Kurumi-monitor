@@ -5,6 +5,7 @@
 export const BOARDS = [
   { id: 'cpu', name: 'CPU 板块', prefix: '0000' },
   { id: 'gpu', name: 'GPU 板块', prefix: '6000' },
+  { id: 'thermal', name: '温度 板块', prefix: '7000' },
   { id: 'mem', name: '内存 板块', prefix: '3000' },
   { id: 'disk', name: '磁盘 板块', prefix: '0020' },
   { id: 'net', name: '网络 板块', prefix: '0010' },
@@ -43,6 +44,8 @@ const UNITS = {
   ps: { d: 0, suffix: '/s', ref: 'rate' },
   cnt: { d: 0, suffix: '', ref: 'raw' },
   hrs: { d: 1, suffix: 'h', ref: 'raw' },
+  c: { d: 1, suffix: '°C', ref: 'raw' },
+  w: { d: 1, suffix: 'W', ref: 'raw' },
 };
 
 export const unitOf = (u) => UNITS[u] ?? UNITS.cnt;
@@ -62,6 +65,12 @@ export const METRICS = [
   { code: '600003', name: 'Tiler 占用', board: 'gpu', unit: 'pct' },
   { code: '600004', name: '显存占用', board: 'gpu', unit: 'gib' },
   { code: '600005', name: '显存分配', board: 'gpu', unit: 'gib' },
+
+  // 温度与功耗只有 Windows 能采到：GPU 读数走 nvidia-smi，热区走 ACPI。
+  // macOS 上这三项恒为空，页面显示「—」。
+  { code: '700001', name: 'GPU 温度', board: 'thermal', unit: 'c' },
+  { code: '700002', name: 'GPU 功耗', board: 'thermal', unit: 'w' },
+  { code: '700003', name: '热区温度', board: 'thermal', unit: 'c' },
 
   { code: '300001', name: '内存占用率', board: 'mem', unit: 'pct' },
   { code: '300002', name: MEM_SEGMENTS[0].name, board: 'mem', unit: 'gib' },
